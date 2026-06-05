@@ -2,7 +2,8 @@ if ("stackTraceLimit" in Error) {Error.stackTraceLimit = 50}
 
 import "./main.sass"
 import {App} from "@/ui/App.tsx"
-import {panic, Progress, RuntimeNotification, RuntimeNotifier, UUID} from "@opendaw/lib-std"
+import {isDefined, panic, Progress, RuntimeNotification, RuntimeNotifier, UUID} from "@opendaw/lib-std"
+import {AiBridgeClient} from "@/service/AiBridgeClient.ts"
 import {StudioService} from "@/service/StudioService"
 import {SampleMetaData, SoundfontMetaData} from "@opendaw/studio-adapters"
 import {Dialogs} from "@/ui/components/dialogs.tsx"
@@ -99,6 +100,10 @@ export const boot = async ({workersUrl, workletsUrl, offlineEngineUrl}: {
         sampleManager, soundfontManager, chainedSampleProvider, chainedSoundfontProvider,
         cloudAuthManager, buildInfo)
     StudioShortcutManager.install(service)
+    const aiBridgePort = new URLSearchParams(location.search).get("ai-bridge")
+    if (isDefined(aiBridgePort)) {
+        AiBridgeClient.connect(service, `ws://localhost:${aiBridgePort.length > 0 ? aiBridgePort : "8765"}`)
+    }
     const errorHandler = new ErrorHandler(buildInfo, () => service.recovery.createBackupCommand())
     const surface = Surface.main({
         config: (surface: Surface) => surface.own(ContextMenu.install(surface.owner, (menuItem, {clientX, clientY}) => {
