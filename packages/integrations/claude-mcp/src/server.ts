@@ -3,6 +3,7 @@ import {tryCatch} from "@opendaw/lib-std"
 import {Engine} from "./engine.js"
 import {makeTools} from "./tools.js"
 import {CATALOG} from "./catalog.js"
+import {StudioBridge} from "./bridge.js"
 import {z} from "zod"
 
 const GUIDE = `# Making music in openDAW via MCP
@@ -20,10 +21,10 @@ const GUIDE = `# Making music in openDAW via MCP
 - Audio effects: delay. MIDI effects: pitch. See opendaw://catalog for details.
 - v1 builds MIDI + synths only (no audio sample import).`
 
-export const createServer = (): McpServer => {
+export const createServer = (bridge?: StudioBridge): McpServer => {
   const engine = new Engine()
   const server = new McpServer({name: "claude-opendaw", version: "0.0.1"})
-  for (const tool of makeTools(engine)) {
+  for (const tool of makeTools(engine, bridge)) {
     server.registerTool(tool.name, {description: tool.description, inputSchema: tool.inputSchema.shape},
       async (args: Record<string, unknown>) => {
         const result = tryCatch(() => tool.run(args))

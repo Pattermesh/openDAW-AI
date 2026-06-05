@@ -1,6 +1,7 @@
 import {z} from "zod"
 import {AudioEffects, MIDIEffects} from "@opendaw/studio-scripting"
 import {Engine, InstrumentName} from "./engine.js"
+import {StudioBridge} from "./bridge.js"
 
 export type Tool = {
   name: string
@@ -13,7 +14,7 @@ const INSTRUMENTS = ["Vaporisateur", "Playfield", "Nano", "Soundfont", "Tape", "
 const time = z.union([z.number(), z.string()])
 const pitch = z.union([z.number(), z.string()])
 
-export const makeTools = (engine: Engine): ReadonlyArray<Tool> => {
+export const makeTools = (engine: Engine, bridge?: StudioBridge): ReadonlyArray<Tool> => {
   const createProject = z.object({
     name: z.string(),
     bpm: z.number().optional(),
@@ -71,6 +72,13 @@ export const makeTools = (engine: Engine): ReadonlyArray<Tool> => {
     {name: "get_project_info", description: "Summarize the working project (name, bpm, tracks).", inputSchema: empty,
      run: () => engine.getProjectInfo()},
     {name: "export_project", description: "Write the project to a .od file. Returns {path, bytes}.", inputSchema: exportProject,
-     run: args => engine.exportToFile(exportProject.parse(args).path)}
+     run: args => engine.exportToFile(exportProject.parse(args).path)},
+    {name: "open_in_studio", description: "Push the current project to a running openDAW studio connected via the live bridge (requires the server started with --bridge). Returns how many studios received it.",
+     inputSchema: empty,
+     run: () => {
+       if (bridge === undefined) return {ok: false, message: "Live bridge is not enabled. Start the server with --bridge."}
+       const clients = bridge.push(engine.export(), engine.getProjectInfo().name)
+       return {ok: clients > 0, clients, message: clients > 0 ? `Opened in ${clients} studio(s)` : "No studio connected to the bridge yet"}
+     }}
   ]
 }
