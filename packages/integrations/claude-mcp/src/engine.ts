@@ -3,10 +3,10 @@ import {
   ApiImpl, AudioEffects, AuxAudioUnit, GroupAudioUnit,
   InstrumentAudioUnit, Instruments, NoteRegion, NoteTrack, ProjectImpl
 } from "@opendaw/studio-scripting"
-import {makeApi} from "./headless"
-import {toBytes} from "./serialize"
-import {parsePPQN, parsePitch} from "./time"
-import {IdRegistry} from "./ids"
+import {makeApi} from "./headless.js"
+import {toBytes} from "./serialize.js"
+import {parsePPQN, parsePitch} from "./time.js"
+import {IdRegistry} from "./ids.js"
 
 export type InstrumentName = keyof Instruments
 type AnyUnit = InstrumentAudioUnit | AuxAudioUnit | GroupAudioUnit

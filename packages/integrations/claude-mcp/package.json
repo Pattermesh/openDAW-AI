@@ -9,7 +9,7 @@
   },
   "main": "./dist/index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "esbuild src/index.ts --bundle --platform=node --format=esm --target=node22 --outfile=dist/index.js",
     "start": "node dist/index.js",
     "dev": "npx tsx src/index.ts",
     "test": "vitest run",
@@ -22,10 +22,11 @@
     "@opendaw/lib-std": "^0.0.78",
     "@opendaw/studio-adapters": "^0.0.114",
     "@opendaw/studio-scripting": "^0.0.67",
-    "zod": "^3.23.8"
+    "zod": "^4.0.0"
   },
   "devDependencies": {
     "@opendaw/typescript-config": "^0.0.32",
+    "esbuild": "^0.24.0",
     "tsx": "^4.19.0"
   }
 }
