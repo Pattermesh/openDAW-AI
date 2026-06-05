@@ -10,7 +10,9 @@ describe("export to file", () => {
     const engine = new Engine()
     engine.createProject({name: "File"})
     engine.addInstrumentTrack({instrument: "Nano"})
-    const path = join(mkdtempSync(join(tmpdir(), "od-")), "out.od")
+    const dir = mkdtempSync(join(tmpdir(), "od-"))
+    process.env.OPENDAW_MCP_OUT_DIR = dir
+    const path = join(dir, "out.od")
     const result = engine.exportToFile(path)
     expect(result.path).toBe(path)
     expect(result.bytes).toBeGreaterThan(0)

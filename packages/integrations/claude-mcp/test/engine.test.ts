@@ -31,4 +31,21 @@ describe("Engine", () => {
     engine.addAudioEffect({trackId: auxId, type: "delay", params: {wet: 0.6}})
     expect(() => engine.export()).not.toThrow()
   })
+
+  it("adds a midi effect and rejects sends that target a track", () => {
+    const engine = new Engine()
+    engine.createProject({name: "Guard"})
+    const a = engine.addInstrumentTrack({instrument: "Vaporisateur"})
+    const b = engine.addInstrumentTrack({instrument: "Nano"})
+    engine.addMidiEffect({trackId: a.trackId, type: "pitch", params: {octaves: -1}})
+    expect(() => engine.addSend({fromTrackId: a.trackId, toId: b.trackId, amount: -6})).toThrow(/aux or group/)
+  })
+
+  it("refuses to export outside the allowed root or to a non-.od path", () => {
+    const engine = new Engine()
+    engine.createProject({name: "Safe"})
+    engine.addInstrumentTrack({instrument: "Nano"})
+    expect(() => engine.exportToFile("/etc/passwd")).toThrow(/outside|\.od/)
+    expect(() => engine.exportToFile(`${process.env.HOME}/x.txt`)).toThrow(/\.od/)
+  })
 })

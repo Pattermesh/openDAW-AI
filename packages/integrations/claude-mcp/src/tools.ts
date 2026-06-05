@@ -1,5 +1,5 @@
 import {z} from "zod"
-import {AudioEffects} from "@opendaw/studio-scripting"
+import {AudioEffects, MIDIEffects} from "@opendaw/studio-scripting"
 import {Engine, InstrumentName} from "./engine.js"
 
 export type Tool = {
@@ -9,7 +9,7 @@ export type Tool = {
   run: (args: unknown) => unknown
 }
 
-const INSTRUMENTS = ["Vaporisateur", "Playfield", "Nano", "Soundfont", "Tape", "MIDIOutput"] as const
+const INSTRUMENTS = ["Vaporisateur", "Playfield", "Nano", "Soundfont", "Tape", "MIDIOutput"] as const satisfies ReadonlyArray<InstrumentName>
 const time = z.union([z.number(), z.string()])
 const pitch = z.union([z.number(), z.string()])
 
@@ -35,6 +35,7 @@ export const makeTools = (engine: Engine): ReadonlyArray<Tool> => {
   const addGroup = z.object({name: z.string().optional()})
   const addSend = z.object({fromTrackId: z.string(), toId: z.string(), amount: z.number(), mode: z.enum(["pre", "post"]).optional()})
   const addAudioEffect = z.object({trackId: z.string(), type: z.enum(["delay"]), params: z.record(z.string(), z.number()).optional()})
+  const addMidiEffect = z.object({trackId: z.string(), type: z.enum(["pitch"]), params: z.record(z.string(), z.number()).optional()})
   const exportProject = z.object({path: z.string()})
   const empty = z.object({})
   return [
@@ -46,7 +47,7 @@ export const makeTools = (engine: Engine): ReadonlyArray<Tool> => {
      run: args => { const value = setTimeSignature.parse(args); return engine.setTimeSignature(value.numerator, value.denominator) }},
     {name: "add_instrument_track", description: "Add an instrument track (instrument from opendaw://catalog). Returns trackId.",
      inputSchema: addInstrumentTrack,
-     run: args => engine.addInstrumentTrack(addInstrumentTrack.parse(args) as {instrument: InstrumentName, name?: string})},
+     run: args => engine.addInstrumentTrack(addInstrumentTrack.parse(args))},
     {name: "add_note_region", description: "Add a MIDI region to a track. Position/duration are PPQN ints or '1bar'/'1/8'. Returns regionId.",
      inputSchema: addNoteRegion, run: args => engine.addNoteRegion(addNoteRegion.parse(args))},
     {name: "add_notes", description: "Add notes to a region. pitch is MIDI int or note name like 'C4'.",
@@ -63,6 +64,10 @@ export const makeTools = (engine: Engine): ReadonlyArray<Tool> => {
      inputSchema: addAudioEffect,
      run: args => { const value = addAudioEffect.parse(args)
        return engine.addAudioEffect({trackId: value.trackId, type: value.type, params: value.params as Partial<AudioEffects["delay"]>}) }},
+    {name: "add_midi_effect", description: "Add a MIDI effect ('pitch') to a track. params are numbers (octaves, semiTones, cents).",
+     inputSchema: addMidiEffect,
+     run: args => { const value = addMidiEffect.parse(args)
+       return engine.addMidiEffect({trackId: value.trackId, type: value.type, params: value.params as Partial<MIDIEffects["pitch"]>}) }},
     {name: "get_project_info", description: "Summarize the working project (name, bpm, tracks).", inputSchema: empty,
      run: () => engine.getProjectInfo()},
     {name: "export_project", description: "Write the project to a .od file. Returns {path, bytes}.", inputSchema: exportProject,

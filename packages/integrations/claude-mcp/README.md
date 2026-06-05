@@ -57,8 +57,17 @@ wraps a tool-calling loop over this same tool schema.
 | `add_aux` / `add_group` | Create send / group buses |
 | `add_send` | Route a track to an aux/group |
 | `add_audio_effect` | Add an audio effect (`delay`) |
+| `add_midi_effect` | Add a MIDI effect (`pitch`) |
 | `get_project_info` | Summarize the project |
-| `export_project` | Write the `.od` file → `{path, bytes}` |
+| `export_project` | Write the `.od` file → `{path, bytes}` (sandboxed, see Safety) |
+
+## Safety
+
+`export_project` only writes files **ending in `.od`** and **inside an allowed root** — `$HOME` by
+default, or `OPENDAW_MCP_OUT_DIR` if set. Paths outside the root (incl. `../` traversal) are refused.
+Set the env var when launching to scope writes tighter, e.g. `OPENDAW_MCP_OUT_DIR=~/opendaw-projects`.
+Invalid inputs (unknown ids, bad pitch/duration, sending to a non-aux/group) return a structured tool
+error rather than crashing the server.
 
 ## Resources & prompt
 

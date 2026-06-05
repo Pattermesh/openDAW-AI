@@ -1,4 +1,5 @@
 import {McpServer} from "@modelcontextprotocol/sdk/server/mcp.js"
+import {tryCatch} from "@opendaw/lib-std"
 import {Engine} from "./engine.js"
 import {makeTools} from "./tools.js"
 import {CATALOG} from "./catalog.js"
@@ -24,9 +25,12 @@ export const createServer = (): McpServer => {
   const server = new McpServer({name: "claude-opendaw", version: "0.0.1"})
   for (const tool of makeTools(engine)) {
     server.registerTool(tool.name, {description: tool.description, inputSchema: tool.inputSchema.shape},
-      async (args: Record<string, unknown>) => ({
-        content: [{type: "text", text: JSON.stringify(tool.run(args))}]
-      }))
+      async (args: Record<string, unknown>) => {
+        const result = tryCatch(() => tool.run(args))
+        if (result.status === "success") return {content: [{type: "text", text: JSON.stringify(result.value)}]}
+        const message = result.error instanceof Error ? result.error.message : String(result.error)
+        return {content: [{type: "text", text: message}], isError: true}
+      })
   }
   server.registerResource("catalog", "opendaw://catalog", {description: "openDAW instruments & effects with parameters"},
     async uri => ({contents: [{uri: uri.href, mimeType: "application/json", text: JSON.stringify(CATALOG, null, 2)}]}))
