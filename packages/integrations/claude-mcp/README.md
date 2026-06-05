@@ -58,6 +58,7 @@ wraps a tool-calling loop over this same tool schema.
 | `add_send` | Route a track to an aux/group |
 | `add_audio_effect` | Add an audio effect (`delay`) |
 | `add_midi_effect` | Add a MIDI effect (`pitch`) |
+| `add_automation` | Automate a track's volume/panning over time |
 | `get_project_info` | Summarize the project |
 | `export_project` | Write the `.od` file → `{path, bytes}` (sandboxed, see Safety) |
 

@@ -56,8 +56,8 @@ describe("stdio integration (real MCP protocol)", () => {
   beforeAll(async () => { client = new Client(); await client.init() }, 120000)
   afterAll(() => client.kill())
 
-  it("lists 15 tools, 2 resources, 1 prompt", async () => {
-    expect((await client.list("tools/list")).tools).toHaveLength(15)
+  it("lists 16 tools, 2 resources, 1 prompt", async () => {
+    expect((await client.list("tools/list")).tools).toHaveLength(16)
     expect((await client.list("resources/list")).resources).toHaveLength(2)
     expect((await client.list("prompts/list")).prompts).toHaveLength(1)
   })

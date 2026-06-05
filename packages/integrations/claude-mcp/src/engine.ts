@@ -5,6 +5,7 @@ import {
   ApiImpl, AudioEffects, AuxAudioUnit, GroupAudioUnit,
   InstrumentAudioUnit, Instruments, MIDIEffects, NoteRegion, NoteTrack, ProjectImpl
 } from "@opendaw/studio-scripting"
+import {Interpolation, PPQN} from "@opendaw/lib-dsp"
 import {makeApi} from "./headless.js"
 import {toBytes} from "./serialize.js"
 import {parsePPQN, parsePitch} from "./time.js"
@@ -111,6 +112,20 @@ export class Engine {
   addMidiEffect<T extends keyof MIDIEffects>(input: {trackId: string, type: T, params?: Partial<MIDIEffects[T]>}): {ok: true} {
     this.#unit(input.trackId).addMIDIEffect(input.type, input.params)
     return {ok: true}
+  }
+
+  addAutomation(input: {trackId: string, param: "volume" | "panning",
+    points: ReadonlyArray<{position: number | string, value: number, interpolation?: "linear" | "step"}>}): {regionId: string, count: number} {
+    const unit = this.#unit(input.trackId)
+    const track = unit.addValueTrack(unit, input.param)
+    const positions = input.points.map(point => parsePPQN(point.position))
+    const region = track.addRegion({position: 0, duration: Math.max(0, ...positions) + PPQN.Bar})
+    region.addEvents(input.points.map(point => ({
+      position: parsePPQN(point.position),
+      value: Math.max(0, Math.min(1, point.value)),
+      interpolation: point.interpolation === "step" ? Interpolation.None : Interpolation.Linear
+    })))
+    return {regionId: this.#ids.add("automation", region), count: input.points.length}
   }
 
   getProjectInfo(): {name: string, bpm: number, timeSignature: TimeSig, tracks: ReadonlyArray<TrackSummary>} {

@@ -37,6 +37,8 @@ export const makeTools = (engine: Engine, bridge?: StudioBridge): ReadonlyArray<
   const addSend = z.object({fromTrackId: z.string(), toId: z.string(), amount: z.number(), mode: z.enum(["pre", "post"]).optional()})
   const addAudioEffect = z.object({trackId: z.string(), type: z.enum(["delay"]), params: z.record(z.string(), z.number()).optional()})
   const addMidiEffect = z.object({trackId: z.string(), type: z.enum(["pitch"]), params: z.record(z.string(), z.number()).optional()})
+  const addAutomation = z.object({trackId: z.string(), param: z.enum(["volume", "panning"]),
+    points: z.array(z.object({position: time, value: z.number(), interpolation: z.enum(["linear", "step"]).optional()}))})
   const exportProject = z.object({path: z.string()})
   const empty = z.object({})
   return [
@@ -69,6 +71,8 @@ export const makeTools = (engine: Engine, bridge?: StudioBridge): ReadonlyArray<
      inputSchema: addMidiEffect,
      run: args => { const value = addMidiEffect.parse(args)
        return engine.addMidiEffect({trackId: value.trackId, type: value.type, params: value.params as Partial<MIDIEffects["pitch"]>}) }},
+    {name: "add_automation", description: "Automate a track's volume or panning over time. points: [{position (PPQN or '1bar'/'1/8'), value 0..1, interpolation? 'linear'|'step'}].",
+     inputSchema: addAutomation, run: args => engine.addAutomation(addAutomation.parse(args))},
     {name: "get_project_info", description: "Summarize the working project (name, bpm, tracks).", inputSchema: empty,
      run: () => engine.getProjectInfo()},
     {name: "export_project", description: "Write the project to a .od file. Returns {path, bytes}.", inputSchema: exportProject,

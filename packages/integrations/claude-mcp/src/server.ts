@@ -19,6 +19,7 @@ const GUIDE = `# Making music in openDAW via MCP
   6. get_project_info to verify, then export_project(path)
 - Instruments: Vaporisateur (synth), Nano (synth), Playfield/Soundfont/Tape (samplers), MIDIOutput.
 - Audio effects: delay. MIDI effects: pitch. See opendaw://catalog for details.
+- Automate volume/panning over time with add_automation (values 0..1, 'linear' or 'step').
 - v1 builds MIDI + synths only (no audio sample import).`
 
 export const createServer = (bridge?: StudioBridge): McpServer => {

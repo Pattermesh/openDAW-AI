@@ -41,6 +41,17 @@ describe("Engine", () => {
     expect(() => engine.addSend({fromTrackId: a.trackId, toId: b.trackId, amount: -6})).toThrow(/aux or group/)
   })
 
+  it("automates a track's volume over time", () => {
+    const engine = new Engine()
+    engine.createProject({name: "Auto"})
+    const {trackId} = engine.addInstrumentTrack({instrument: "Vaporisateur"})
+    const {count} = engine.addAutomation({trackId, param: "volume", points: [
+      {position: 0, value: 0.2}, {position: "1bar", value: 0.9, interpolation: "linear"}
+    ]})
+    expect(count).toBe(2)
+    expect(() => engine.export()).not.toThrow()
+  })
+
   it("refuses to export outside the allowed root or to a non-.od path", () => {
     const engine = new Engine()
     engine.createProject({name: "Safe"})
