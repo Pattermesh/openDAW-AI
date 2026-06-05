@@ -261,6 +261,39 @@ export const DefaultWorkspace = Object.freeze({
             notPopoutable: true,
             constrains: {type: "flex", minSize: 0, flex: 1}
         })
+    },
+    "ai": {
+        name: "AI",
+        icon: IconSymbol.ChatMessage,
+        content: {
+            type: "layout",
+            orientation: "horizontal",
+            contents: [
+                {
+                    type: "layout",
+                    orientation: "vertical",
+                    contents: [
+                        PanelState.create({
+                            type: "panel",
+                            name: "Timeline",
+                            icon: IconSymbol.Timeline,
+                            panelType: PanelType.Timeline,
+                            constrains: {type: "flex", minSize: 94, flex: 2}
+                        }),
+                        DevicesPanel
+                    ],
+                    constrains: {type: "flex", minSize: 0, flex: 1}
+                },
+                PanelState.create({
+                    type: "panel",
+                    name: "AI",
+                    icon: IconSymbol.ChatMessage,
+                    panelType: PanelType.AiChat,
+                    constrains: {type: "flex", minSize: 320, maxSize: 480, flex: 0}
+                })
+            ],
+            constrains: {type: "flex", minSize: 0, flex: 1}
+        }
     }
 } satisfies Record<string, Workspace.Screen>)
 

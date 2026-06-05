@@ -13,6 +13,7 @@ export class StudioBridge {
   readonly #server: WebSocketServer
   readonly #clients = new Set<WebSocket>()
   #executor: Optional<ToolExecutor> = undefined
+  #toolSpecs: ReadonlyArray<unknown> = []
 
   constructor(port: number) {
     this.#server = new WebSocketServer({port})
@@ -25,6 +26,8 @@ export class StudioBridge {
   }
 
   setExecutor(executor: ToolExecutor): void { this.#executor = executor }
+
+  setToolSpecs(specs: ReadonlyArray<unknown>): void { this.#toolSpecs = specs }
 
   get clientCount(): number { return this.#clients.size }
 
@@ -39,7 +42,9 @@ export class StudioBridge {
     const parsed = tryCatch(() => JSON.parse(data.toString()) as {type?: string, id?: number, name?: string, args?: unknown})
     if (parsed.status !== "success") {return}
     const {type, id, name, args} = parsed.value
-    if (type !== "tool" || typeof id !== "number" || typeof name !== "string") {return}
+    if (typeof id !== "number") {return}
+    if (type === "list_tools") { this.#reply(socket, {type: "result", id, ok: true, value: this.#toolSpecs}); return }
+    if (type !== "tool" || typeof name !== "string") {return}
     const executor = this.#executor
     if (executor === undefined) { this.#reply(socket, {type: "result", id, ok: false, error: "Bridge has no executor"}); return }
     const result = tryCatch(() => executor(name, args))

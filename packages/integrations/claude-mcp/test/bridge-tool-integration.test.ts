@@ -37,6 +37,14 @@ class FakeStudio {
       this.#socket.send(JSON.stringify({type: "tool", id, name, args}))
     })
   }
+  listTools(): Promise<ToolResult> {
+    const id = ++this.#id
+    return new Promise<ToolResult>((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error("list_tools timed out")), 8000)
+      this.#pending.set(id, message => { clearTimeout(timer); resolve(message) })
+      this.#socket.send(JSON.stringify({type: "list_tools", id}))
+    })
+  }
   close(): void { this.#socket.close() }
 }
 
@@ -67,6 +75,15 @@ describe("A2 bidirectional bridge (studio → MCP tool calls)", () => {
     const unknown = await studio.callTool("does_not_exist", {})
     expect(unknown.ok).toBe(false)
     expect(unknown.error).toMatch(/Unknown tool/)
+  })
+
+  it("lists tool specs (name + input_schema) for the model", async () => {
+    const result = await studio.listTools()
+    expect(result.ok).toBe(true)
+    const specs = result.value as Array<{name: string, input_schema: unknown}>
+    expect(specs).toHaveLength(20)
+    expect(specs.map(spec => spec.name)).toContain("create_project")
+    expect(specs[0]).toHaveProperty("input_schema")
   })
 
   it("refreshes the studio with open_in_studio (project push)", async () => {

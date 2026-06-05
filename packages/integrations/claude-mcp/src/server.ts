@@ -34,6 +34,9 @@ export const createServer = (bridge?: StudioBridge): McpServer => {
       if (tool === undefined) {throw new Error(`Unknown tool: ${name}`)}
       return tool.run(args)
     })
+    bridge.setToolSpecs(tools.map(tool => ({
+      name: tool.name, description: tool.description, input_schema: z.toJSONSchema(tool.inputSchema)
+    })))
   }
   for (const tool of tools) {
     server.registerTool(tool.name, {description: tool.description, inputSchema: tool.inputSchema.shape},
