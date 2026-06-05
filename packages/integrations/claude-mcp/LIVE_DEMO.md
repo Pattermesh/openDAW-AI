@@ -1,9 +1,27 @@
-# Live demo — AI builds music in a running openDAW (A + A2)
+# Live demo — AI builds music in a running openDAW (A + A2 + in-studio sidebar)
 
-Two ways to use the MCP:
+Three ways to use the MCP:
 
 - **Offline (A):** the model builds a project and `export_project` writes a `.od` file you open manually.
-- **Live (A2):** the model calls `open_in_studio` and the project appears in a **running** openDAW tab.
+- **Live (A2):** an external Claude (terminal/Desktop) calls `open_in_studio` and the project appears in a **running** openDAW tab.
+- **In-studio chat sidebar (B):** chat *inside* openDAW — switch to the **AI** screen, enter your Anthropic
+  key, and type. The sidebar runs the model loop in the browser and forwards each tool call to the MCP
+  over the same bridge, refreshing the project live. (Needs the MCP running with `--bridge`.)
+
+## In-studio sidebar (B) — quickstart
+
+1. Start the MCP **standalone in bridge mode** (so the browser can reach it):
+   ```bash
+   node ~/Desktop/opendaw/packages/integrations/claude-mcp/dist/index.js --bridge --port 8765
+   ```
+2. `npm run dev:studio` → open **https://localhost:8080/?ai-bridge=8765** in Chrome.
+3. Click the **AI** tab (chat icon) in the header. In the sidebar, paste your **Anthropic API key**
+   (stored in localStorage) and optionally set a model (default `claude-sonnet-4-5`).
+4. Type: *"make a lo-fi beat at 72 BPM with a bass and chord track, add a gentle volume swell"* → the
+   model calls tools over the bridge and the project updates live in the timeline.
+
+> The browser calls the Anthropic API directly (with the browser-access header); your key stays in the
+> browser. For multi-provider (OpenAI/Ollama) see issue #5.
 
 ## Live bridge setup
 
