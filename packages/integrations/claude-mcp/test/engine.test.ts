@@ -1,6 +1,7 @@
 import {describe, expect, it} from "vitest"
 import {Engine} from "../src/engine"
 import {fromBytes} from "../src/serialize"
+import {engineWithProject} from "./helpers.js"
 
 describe("Engine", () => {
   it("creates a project with an instrument track and notes, then exports decodable bytes", () => {
@@ -58,5 +59,31 @@ describe("Engine", () => {
     engine.addInstrumentTrack({instrument: "Nano"})
     expect(() => engine.exportToFile("/etc/passwd")).toThrow(/outside|\.od/)
     expect(() => engine.exportToFile(`${process.env.HOME}/x.txt`)).toThrow(/\.od/)
+  })
+
+  it("routes a track to a group, sends to an aux, then removes the send", () => {
+    const engine = engineWithProject({name: "Route"})
+    const {trackId} = engine.addInstrumentTrack({instrument: "Vaporisateur"})
+    const {groupId} = engine.addGroup({name: "Bus"})
+    engine.routeOutput({fromId: trackId, toGroupId: groupId})
+    const {auxId} = engine.addAux({name: "FX"})
+    const {sendId} = engine.addSend({fromTrackId: trackId, toId: auxId, amount: -8})
+    engine.removeSend({sendId})
+    expect(() => engine.export()).not.toThrow()
+  })
+
+  it("rejects routing output to a non-group target", () => {
+    const engine = engineWithProject()
+    const a = engine.addInstrumentTrack({instrument: "Nano"})
+    const b = engine.addInstrumentTrack({instrument: "Nano"})
+    expect(() => engine.routeOutput({fromId: a.trackId, toGroupId: b.trackId})).toThrow(/must be a group/)
+  })
+
+  it("sets a region loop", () => {
+    const engine = engineWithProject()
+    const {trackId} = engine.addInstrumentTrack({instrument: "Nano"})
+    const {regionId} = engine.addNoteRegion({trackId, position: 0, duration: "4bar"})
+    engine.setRegionLoop({regionId, loopDuration: "1bar", loopOffset: 0})
+    expect(() => engine.export()).not.toThrow()
   })
 })

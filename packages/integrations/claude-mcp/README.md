@@ -59,6 +59,10 @@ wraps a tool-calling loop over this same tool schema.
 | `add_audio_effect` | Add an audio effect (`delay`) |
 | `add_midi_effect` | Add a MIDI effect (`pitch`) |
 | `add_automation` | Automate a track's volume/panning over time |
+| `list_devices` | List available instruments/effects (catalog as a tool) |
+| `route_output` | Route a track/aux to a group bus |
+| `remove_send` | Remove a send by id |
+| `set_region_loop` | Set a region's loop length/offset |
 | `get_project_info` | Summarize the project |
 | `export_project` | Write the `.od` file → `{path, bytes}` (sandboxed, see Safety) |
 

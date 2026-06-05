@@ -3,7 +3,7 @@ import {homedir} from "node:os"
 import {resolve, sep} from "node:path"
 import {
   ApiImpl, AudioEffects, AuxAudioUnit, GroupAudioUnit,
-  InstrumentAudioUnit, Instruments, MIDIEffects, NoteRegion, NoteTrack, ProjectImpl
+  InstrumentAudioUnit, Instruments, MIDIEffects, NoteRegion, NoteTrack, ProjectImpl, Send
 } from "@opendaw/studio-scripting"
 import {Interpolation, PPQN} from "@opendaw/lib-dsp"
 import {makeApi} from "./headless.js"
@@ -96,11 +96,32 @@ export class Engine {
     return {groupId: this.#ids.add("group", {kind: "group", unit: group} satisfies GroupEntry)}
   }
 
-  addSend(input: {fromTrackId: string, toId: string, amount: number, mode?: "pre" | "post"}): {ok: true} {
+  addSend(input: {fromTrackId: string, toId: string, amount: number, mode?: "pre" | "post"}): {sendId: string} {
     const from = this.#unit(input.fromTrackId)
     const target = this.#ids.get<Entry>(input.toId)
     if (target.kind === "track") throw new Error(`Send target ${input.toId} is a track; sends must target an aux or group`)
-    from.addSend(target.unit, {amount: input.amount, mode: input.mode ?? "post"})
+    const send = from.addSend(target.unit, {amount: input.amount, mode: input.mode ?? "post"})
+    return {sendId: this.#ids.add("send", {send, from})}
+  }
+
+  removeSend(input: {sendId: string}): {ok: true} {
+    const entry = this.#ids.get<{send: Send, from: AnyUnit}>(input.sendId)
+    entry.from.removeSend(entry.send)
+    return {ok: true}
+  }
+
+  routeOutput(input: {fromId: string, toGroupId: string}): {ok: true} {
+    const from = this.#unit(input.fromId)
+    const target = this.#ids.get<Entry>(input.toGroupId)
+    if (target.kind !== "group") throw new Error(`Output target ${input.toGroupId} must be a group`)
+    from.output = target.unit
+    return {ok: true}
+  }
+
+  setRegionLoop(input: {regionId: string, loopDuration: number | string, loopOffset?: number | string}): {ok: true} {
+    const region = this.#ids.get<NoteRegion>(input.regionId)
+    region.loopDuration = Math.max(0, parsePPQN(input.loopDuration))
+    if (input.loopOffset !== undefined) region.loopOffset = Math.max(0, parsePPQN(input.loopOffset))
     return {ok: true}
   }
 

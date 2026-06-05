@@ -2,6 +2,7 @@ import {z} from "zod"
 import {AudioEffects, MIDIEffects} from "@opendaw/studio-scripting"
 import {Engine, InstrumentName} from "./engine.js"
 import {StudioBridge} from "./bridge.js"
+import {CATALOG} from "./catalog.js"
 
 export type Tool = {
   name: string
@@ -40,6 +41,9 @@ export const makeTools = (engine: Engine, bridge?: StudioBridge): ReadonlyArray<
   const addAutomation = z.object({trackId: z.string(), param: z.enum(["volume", "panning"]),
     points: z.array(z.object({position: time, value: z.number(), interpolation: z.enum(["linear", "step"]).optional()}))})
   const exportProject = z.object({path: z.string()})
+  const removeSend = z.object({sendId: z.string()})
+  const routeOutput = z.object({fromId: z.string(), toGroupId: z.string()})
+  const setRegionLoop = z.object({regionId: z.string(), loopDuration: time, loopOffset: time.optional()})
   const empty = z.object({})
   return [
     {name: "create_project", description: "Create/replace the working project.", inputSchema: createProject,
@@ -57,8 +61,16 @@ export const makeTools = (engine: Engine, bridge?: StudioBridge): ReadonlyArray<
      inputSchema: addNotes, run: args => engine.addNotes(addNotes.parse(args))},
     {name: "set_track_mix", description: "Set volume (dB), panning (-1..1), mute, solo on a track/aux/group.",
      inputSchema: setTrackMix, run: args => engine.setTrackMix(setTrackMix.parse(args))},
+    {name: "list_devices", description: "List available instruments and effects (the catalog) as a tool result.",
+     inputSchema: empty, run: () => CATALOG},
     {name: "add_aux", description: "Add an aux (send/effect) bus. Returns auxId.", inputSchema: addAux,
      run: args => engine.addAux(addAux.parse(args))},
+    {name: "route_output", description: "Route a track/aux output to a group bus.", inputSchema: routeOutput,
+     run: args => engine.routeOutput(routeOutput.parse(args))},
+    {name: "remove_send", description: "Remove a send by its id (returned from add_send).", inputSchema: removeSend,
+     run: args => engine.removeSend(removeSend.parse(args))},
+    {name: "set_region_loop", description: "Set a note region's loop length/offset (PPQN or '1bar'/'1/8').", inputSchema: setRegionLoop,
+     run: args => engine.setRegionLoop(setRegionLoop.parse(args))},
     {name: "add_group", description: "Add a group bus. Returns groupId.", inputSchema: addGroup,
      run: args => engine.addGroup(addGroup.parse(args))},
     {name: "add_send", description: "Send audio from a track to an aux/group (amount in dB).", inputSchema: addSend,
