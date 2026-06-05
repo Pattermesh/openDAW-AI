@@ -27,7 +27,15 @@ const GUIDE = `# Making music in openDAW via MCP
 export const createServer = (bridge?: StudioBridge): McpServer => {
   const engine = new Engine()
   const server = new McpServer({name: "claude-opendaw", version: "0.0.1"})
-  for (const tool of makeTools(engine, bridge)) {
+  const tools = makeTools(engine, bridge)
+  if (bridge !== undefined) {
+    bridge.setExecutor((name, args) => {
+      const tool = tools.find(entry => entry.name === name)
+      if (tool === undefined) {throw new Error(`Unknown tool: ${name}`)}
+      return tool.run(args)
+    })
+  }
+  for (const tool of tools) {
     server.registerTool(tool.name, {description: tool.description, inputSchema: tool.inputSchema.shape},
       async (args: Record<string, unknown>) => {
         const result = tryCatch(() => tool.run(args))
