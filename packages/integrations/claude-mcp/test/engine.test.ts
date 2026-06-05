@@ -86,4 +86,19 @@ describe("Engine", () => {
     engine.setRegionLoop({regionId, loopDuration: "1bar", loopOffset: 0})
     expect(() => engine.export()).not.toThrow()
   })
+
+  it("reports per-track effects, sends and automation in get_project_info", () => {
+    const engine = engineWithProject()
+    const {trackId} = engine.addInstrumentTrack({instrument: "Vaporisateur"})
+    engine.addMidiEffect({trackId, type: "pitch"})
+    engine.addAudioEffect({trackId, type: "delay"})
+    engine.addAutomation({trackId, param: "volume", points: [{position: 0, value: 0.5}]})
+    const {auxId} = engine.addAux({})
+    engine.addSend({fromTrackId: trackId, toId: auxId, amount: -6})
+    const track = engine.getProjectInfo().tracks[0]
+    expect(track.midiEffects).toEqual(["pitch"])
+    expect(track.audioEffects).toEqual(["delay"])
+    expect(track.automation).toEqual(["volume"])
+    expect(track.sends).toBe(1)
+  })
 })

@@ -20,7 +20,10 @@ type Entry = TrackEntry | AuxEntry | GroupEntry
 
 type NoteInput = {position: number | string, pitch: number | string, duration?: number | string, velocity?: number}
 type TimeSig = {numerator: number, denominator: number}
-type TrackSummary = {id: string, name: string, instrument: InstrumentName, regions: number}
+type TrackSummary = {
+  id: string, name: string, instrument: InstrumentName, regions: number,
+  audioEffects: Array<string>, midiEffects: Array<string>, sends: number, automation: Array<string>
+}
 
 const clampUnit = (value: number): number => Math.max(0, Math.min(1, value))
 
@@ -52,7 +55,7 @@ export class Engine {
     const track = unit.addNoteTrack()
     const name = input.name ?? input.instrument
     const id = this.#ids.add("track", {kind: "track", unit, track, name, instrument: input.instrument} satisfies TrackEntry)
-    this.#tracks.push({id, name, instrument: input.instrument, regions: 0})
+    this.#tracks.push({id, name, instrument: input.instrument, regions: 0, audioEffects: [], midiEffects: [], sends: 0, automation: []})
     return {trackId: id}
   }
 
@@ -101,6 +104,7 @@ export class Engine {
     const target = this.#ids.get<Entry>(input.toId)
     if (target.kind === "track") throw new Error(`Send target ${input.toId} is a track; sends must target an aux or group`)
     const send = from.addSend(target.unit, {amount: input.amount, mode: input.mode ?? "post"})
+    this.#onSummary(input.fromTrackId, summary => summary.sends++)
     return {sendId: this.#ids.add("send", {send, from})}
   }
 
@@ -127,11 +131,13 @@ export class Engine {
 
   addAudioEffect<T extends keyof AudioEffects>(input: {trackId: string, type: T, params?: Partial<AudioEffects[T]>}): {ok: true} {
     this.#unit(input.trackId).addAudioEffect(input.type, input.params)
+    this.#onSummary(input.trackId, summary => summary.audioEffects.push(String(input.type)))
     return {ok: true}
   }
 
   addMidiEffect<T extends keyof MIDIEffects>(input: {trackId: string, type: T, params?: Partial<MIDIEffects[T]>}): {ok: true} {
     this.#unit(input.trackId).addMIDIEffect(input.type, input.params)
+    this.#onSummary(input.trackId, summary => summary.midiEffects.push(String(input.type)))
     return {ok: true}
   }
 
@@ -146,6 +152,7 @@ export class Engine {
       value: Math.max(0, Math.min(1, point.value)),
       interpolation: point.interpolation === "step" ? Interpolation.None : Interpolation.Linear
     })))
+    this.#onSummary(input.trackId, summary => summary.automation.push(input.param))
     return {regionId: this.#ids.add("automation", region), count: input.points.length}
   }
 
@@ -163,6 +170,11 @@ export class Engine {
     const data = new Uint8Array(this.export())
     writeFileSync(abs, data)
     return {path: abs, bytes: data.byteLength}
+  }
+
+  #onSummary(id: string, mutate: (summary: TrackSummary) => void): void {
+    const summary = this.#tracks.find(track => track.id === id)
+    if (summary !== undefined) {mutate(summary)}
   }
 
   #unit(id: string): AnyUnit { return this.#ids.get<Entry>(id).unit }
