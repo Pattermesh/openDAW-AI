@@ -1,3 +1,6 @@
+// Musical input parsing, resolved server-side so the model can speak naturally.
+// parsePPQN: ints, "1bar", or fractions like "1/8" -> pulses (PPQN.Bar based).
+// parsePitch: ints or note names like "C4" -> MIDI number via a 12-tone table.
 import {PPQN} from "@opendaw/lib-dsp"
 
 export const parsePPQN = (value: number | string): number => {

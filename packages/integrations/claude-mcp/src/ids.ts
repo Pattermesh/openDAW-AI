@@ -1,3 +1,6 @@
+// Maps stable, human-readable string handles ("track_1") to live objects. The MCP/tool
+// protocol is stateless JSON — the model can't hold object references — so we hand back ids
+// and resolve them on later calls. Monotonic per-prefix counters: O(1), readable, collision-free.
 export class IdRegistry {
   readonly #items = new Map<string, unknown>()
   readonly #counters = new Map<string, number>()

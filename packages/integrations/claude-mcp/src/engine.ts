@@ -1,3 +1,8 @@
+// Engine — the single source of truth for the in-progress project. Wraps openDAW's
+// headless builder (@opendaw/studio-scripting) and a friendly id registry so a stateless
+// MCP/tool protocol can build and edit a project across independent calls. Every mode
+// (offline export, live bridge, in-studio sidebar) drives THIS object. See
+// opendaw-contributions/docs/code-walkthrough.md §4.
 import {writeFileSync} from "node:fs"
 import {homedir} from "node:os"
 import {resolve, sep} from "node:path"
@@ -13,6 +18,10 @@ import {IdRegistry} from "./ids.js"
 
 export type InstrumentName = keyof Instruments
 type AnyUnit = InstrumentAudioUnit | AuxAudioUnit | GroupAudioUnit
+// Discriminated union keyed by `kind`: lets tools (a) validate intent — e.g. a send must
+// target an aux/group, output must route to a group — and (b) recover the precisely-typed
+// unit from a string id without unsafe casts. (Replaced an `as Aux|Group` cast that hid a
+// mis-routing bug.)
 type TrackEntry = {kind: "track", unit: InstrumentAudioUnit, track: NoteTrack, name: string, instrument: InstrumentName}
 type AuxEntry = {kind: "aux", unit: AuxAudioUnit}
 type GroupEntry = {kind: "group", unit: GroupAudioUnit}
@@ -70,6 +79,8 @@ export class Engine {
 
   addNotes(input: {regionId: string, notes: ReadonlyArray<NoteInput>}): {count: number} {
     const region = this.#ids.get<NoteRegion>(input.regionId)
+    // Clamp to the box model's valid ranges: a model might send MIDI-style 0-127 velocities
+    // or out-of-range pitches/positions; we coerce rather than emit an invalid project.
     const events = input.notes.map(note => ({
       position: Math.max(0, parsePPQN(note.position)),
       pitch: Math.max(0, Math.min(127, Math.round(parsePitch(note.pitch)))),
@@ -145,6 +156,8 @@ export class Engine {
     points: ReadonlyArray<{position: number | string, value: number, interpolation?: "linear" | "step"}>}): {regionId: string, count: number} {
     const unit = this.#unit(input.trackId)
     const track = unit.addValueTrack(unit, input.param)
+    // The automation region must be long enough to contain every point, so size it to the
+    // last point's position plus one bar of headroom.
     const positions = input.points.map(point => parsePPQN(point.position))
     const region = track.addRegion({position: 0, duration: Math.max(0, ...positions) + PPQN.Bar})
     region.addEvents(input.points.map(point => ({
@@ -163,6 +176,8 @@ export class Engine {
   export(): ArrayBufferLike { return toBytes(this.#project) }
 
   exportToFile(target: string): {path: string, bytes: number} {
+    // Security: an LLM-driven tool must not write arbitrary files. Confine writes to an
+    // allowed root ($HOME or OPENDAW_MCP_OUT_DIR) and to the .od extension; reject traversal.
     const root = resolve(process.env.OPENDAW_MCP_OUT_DIR ?? homedir())
     const abs = resolve(target)
     if (abs !== root && !abs.startsWith(root + sep)) throw new Error(`Refusing to write outside ${root}: ${abs}`)
@@ -172,6 +187,8 @@ export class Engine {
     return {path: abs, bytes: data.byteLength}
   }
 
+  // Maintain the human/AI-readable per-track summary (effects/sends/automation) that
+  // get_project_info returns, so the model can SEE the session it is editing.
   #onSummary(id: string, mutate: (summary: TrackSummary) => void): void {
     const summary = this.#tracks.find(track => track.id === id)
     if (summary !== undefined) {mutate(summary)}

@@ -16,6 +16,8 @@ Everything here is AGPL, like openDAW. No CLA, no gatekeeping — pick something
 
 Run + test: see [`README.md`](README.md) and [`LIVE_DEMO.md`](LIVE_DEMO.md).
 Architecture & vision: `opendaw-contributions/docs/design/ai-music-studio.md`.
+**Verbose code walkthrough** (how it works, why these data structures/algorithms, how it bolts onto
+openDAW): `opendaw-contributions/docs/code-walkthrough.md` — read this first to review the code.
 
 ## How to contribute
 
