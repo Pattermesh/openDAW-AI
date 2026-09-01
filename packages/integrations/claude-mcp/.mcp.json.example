@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "opendaw": {
+      "command": "node",
+      "args": ["/Users/tatin/Desktop/opendaw/packages/integrations/claude-mcp/dist/index.js"]
+    }
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "name": "@opendaw/claude-mcp",
+  "version": "0.0.1",
+  "license": "AGPL-3.0-or-later",
+  "type": "module",
+  "private": true,
+  "bin": {
+    "claude-opendaw-mcp": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "node build.mjs",
+    "start": "node dist/index.js",
+    "dev": "npx tsx src/index.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint \"**/*.ts\""
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "@opendaw/lib-dsp": "^0.0.84",
+    "@opendaw/lib-std": "^0.0.78",
+    "@opendaw/studio-adapters": "^0.0.114",
+    "@opendaw/studio-scripting": "^0.0.67",
+    "ws": "^8.18.0",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@opendaw/typescript-config": "^0.0.32",
+    "@types/ws": "^8.5.12",
+    "esbuild": "^0.24.0",
+    "tsx": "^4.19.0"
+  }
+}
